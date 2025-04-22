@@ -22,9 +22,18 @@ app.use(cors()); // CORS
 app.use(express.json()); // Parse JSON request body
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mcp-platform';
+console.log('Attempting to connect to MongoDB at:', MONGODB_URI);
+
+mongoose.connect(MONGODB_URI, {
+  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+  socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+})
+  .then(() => console.log('MongoDB connected successfully'))
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    console.error('Please check your MONGODB_URI environment variable and ensure your MongoDB instance is running.');
+  });
 
 // Routes
 app.use('/api/auth', authRoutes);
