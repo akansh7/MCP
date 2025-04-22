@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${API_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongo:27017/mcp-platform
+      - JWT_SECRET=${JWT_SECRET}
+      - SERVER_KEY_SECRET=${SERVER_KEY_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    depends_on:
+      - mongo
+    volumes:
+      - ./src:/app/src
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:latest
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    restart: unless-stopped
+
+  # Server manager service - manages MCP servers
+  server-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile.server-manager
+    ports:
+      - "${SERVER_MANAGER_PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongo:27017/mcp-platform
+      - SERVER_KEY_SECRET=${SERVER_KEY_SECRET}
+    depends_on:
+      - mongo
+      - api
+    volumes:
+      - ./src/server-manager:/app/src
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+volumes:
+  mongo-data: 
